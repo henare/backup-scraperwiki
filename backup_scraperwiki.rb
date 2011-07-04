@@ -23,5 +23,6 @@ repo = Grit::Repo.new(repository)
 
 Dir.chdir(repository) do
   repo.add("scrapers/*.rb")
-  repo.commit_index("Backed up ScraperWiki scrapers at #{Time.now}")
+  # FIXME: Unfortunately we have to commit all to get this to work for changed files
+  repo.commit_all("Backed up ScraperWiki scrapers at #{Time.now}")
 end
