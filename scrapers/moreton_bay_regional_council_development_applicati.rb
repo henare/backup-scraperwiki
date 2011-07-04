@@ -13,6 +13,9 @@ def scrape_table(doc, comment_url)
     # Columns in table
     # Show  Number  Submitted  Details
     tds = tr.search('td')
+
+    break if tds[0].inner_text =~ /There were no records/
+
     h = tds.map{|td| td.inner_html}
   
     record = {
