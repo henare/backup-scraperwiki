@@ -1,27 +1,20 @@
 require 'rubygems'
 require 'mechanize'
+require 'date'
 
-url = 'http://www.ryde.nsw.gov.au/development/pn.htm'
+url = 'http://www.ryde.nsw.gov.au/Development/Development+Applications/DAs+on+Exhibition/Received+Development+Applications'
 agent = Mechanize.new
 
 page = agent.get(url)
 
-page.search('.Bold').each do |b|
-  details = b.parent.inner_html.split('<br>')
-  
+page.at('div.content-spacing').search('p').each do |p|
   # Skip if this isn't a DA
-  next if details.count != 4
-  
-  # Sometimes we get crazy characters in the council_reference
-  council_reference = details[1].split(' ')[-1].strip
-  if !council_reference.split("\240")[1].nil? 
-    council_reference = council_reference.split("\240")[1]
-  end
+  next if p.search('strong').count < 3
   
   record = {
-    'council_reference' => council_reference,
-    'description'       => details[3].strip,
-    'address'           => details[0].gsub(/\302\240/, ' ').split('<span class="Bold">Property</span>: ')[1].strip,
+    'council_reference' => p.search('strong')[1].next.inner_text.gsub(': ', '').gsub('. ', '').strip,
+    'description'       => p.search('strong')[2].next.next.next.inner_text.strip,
+    'address'           => p.search('strong')[0].next.inner_text.gsub(': ', '').strip,
     'info_url'          => url,
     'comment_url'       => url,
     'date_scraped'      => Date.today.to_s
