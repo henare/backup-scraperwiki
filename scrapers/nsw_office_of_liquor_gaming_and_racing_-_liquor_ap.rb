@@ -9,9 +9,9 @@ data.search('APP').each do |a|
   begin
     record = {
       'council_reference' => a.at('AN').inner_text.strip,
-      'description'       => "#{a.at('LPN').inner_text} - #{a.at('AT').inner_text}",
+      'description'       => "#{a.at('LPN').inner_text.strip} - #{a.at('AT').inner_text.strip}",
       'date_received'     => Date.strptime(a.at('DP').inner_text.gsub('//', '/'), '%d/%m/%y').to_s,
-      'address'           => "#{a.at('SN').inner_text} #{a.at('ST').inner_text}, #{a.at('SU').inner_text} #{a.at('PC').inner_text}",
+      'address'           => "#{a.at('SN').inner_text.strip} #{a.at('ST').inner_text.strip}, #{a.at('SU').inner_text.strip} #{a.at('PC').inner_text.strip}",
       'info_url'          => info_url,
       'comment_url'       => "mailto:liquorapplications@olgr.nsw.gov.au?subject=Application%20Number:%20" + a.at('AN').inner_text.strip,
       'on_notice_to'      => Date.strptime(a.at('SCD').inner_text.gsub('//', '/'), '%d/%m/%y').to_s,

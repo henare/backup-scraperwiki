@@ -5,6 +5,8 @@ require 'net/https'
 require 'json'
 require 'open-uri'
 
+Encoding.default_external = Encoding::UTF_8
+
 host = "esd.cttt.nsw.gov.au"
 url = "/Hearing/HearingList.aspx?LocationCode="
 
@@ -39,7 +41,7 @@ venue_list.each do |v|
       if r.previous.previous.search('b')[1].nil?
         time_and_place = r.previous.previous.inner_text
       else
-        time_and_place = r.previous.previous.search('b')[1].inner_text
+        time_and_place = r.previous.previous.search('span').last.inner_text
       end
     
       # Now the cases
