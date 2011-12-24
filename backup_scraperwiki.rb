@@ -1,10 +1,12 @@
 #! /usr/bin/env ruby
+# -*- encoding: utf-8 -*-
+
 require 'rubygems'
 require 'json'
 require 'open-uri'
 require 'grit'
 
-username = 'henare'
+username = ENV['SCRAPERWIKI_USERNAME'] || raise("SCRAPERWIKI_USERNAME not defined!!!! pls, define it.")
 
 repository = File.dirname(__FILE__)
 
