@@ -13,6 +13,10 @@ What does it do?
 It downloads the code for all scrapers for a particular user and commits
 them onto the master branch of this repository.
 
+You need to set your ScraperWiki username in the `SCRAPERWIKI_USERNAME`
+environment variable, e.g. run the script like so
+`SCRAPERWIKI_USERNAME=henare ./backup_scraperwiki.rb`
+
 There's a separate branch that just has the script so if you'd like your
 own copy, you can clone this repository and create a new branch from the
 `script_only` branch.
