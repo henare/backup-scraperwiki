@@ -2,7 +2,10 @@ require 'rubygems'
 require 'mechanize'
 require 'date'
 
-agent = Mechanize.new
+agent = Mechanize.new do |a|
+  a.verify_mode = OpenSSL::SSL::VERIFY_NONE
+end
+
 url = 'https://www.ntlis.nt.gov.au/planning/lta.dar.list'
 
 page = agent.get(url)

@@ -29,7 +29,7 @@ page.at('table tbody').search('tr').each do |r|
   # Get all the outcomes for a report
   r.search('td')[2].inner_text.strip.scan(/No Breach .*|Breach .*/i).each do |o|
     # Check if this was determined to be a breach or not
-    breach = case o.split("\342\200\223")[0].strip.downcase
+    breach = case o.split("\u2013")[0].strip.downcase
     when "breach"
       true
     when "no breach"
@@ -42,7 +42,7 @@ page.at('table tbody').search('tr').each do |r|
       raise "Could not understand this outcome's determination: #{o.split('\342\200\223')[0].strip}"
     end
 
-    outcomes = o.split("\342\200\223")[1..-1].join('-').strip.split(';') if !outcomes
+    outcomes = o.split("\u2013")[1..-1].join('-').strip.split(';') if !outcomes
 
     # When outcomes have semicolons, it's different sections being
     # referred to so we create multiple outcomes

@@ -4,7 +4,10 @@ require 'date'
 base_url = "https://eservices.ballarat.vic.gov.au/ePathway/Production/Web/GeneralEnquiry/"
 url = "#{base_url}enquirylists.aspx"
 
-agent = Mechanize.new
+agent = Mechanize.new do |a|
+  a.verify_mode = OpenSSL::SSL::VERIFY_NONE # Disable SSL verification :(
+end
+
 first_page = agent.get url
 p first_page.title.strip
 first_page_form = first_page.forms.first
@@ -12,6 +15,7 @@ first_page_form.radiobuttons.first.click
 summary_page = first_page_form.click_button
 
 p summary_page.title.strip
+
 
 das_data = []
 while summary_page
@@ -27,7 +31,7 @@ while summary_page
   end
 end
 
-comment_url = 'mailto:knoxcc@knox.vic.gov.au'
+comment_url = 'mailto:ballcity@ballarat.vic.gov.au'
 
 das = das_data.collect do |da_item|
   page_info = {}

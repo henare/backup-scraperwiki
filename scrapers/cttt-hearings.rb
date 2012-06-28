@@ -16,7 +16,7 @@ http.use_ssl = true
 http.verify_mode = OpenSSL::SSL::VERIFY_NONE
 
 # Get the list of venues from the venue scraper
-venue_list = JSON.parse(open("http://api.scraperwiki.com/api/1.0/datastore/getdata?format=json&name=cttt-hearing-venues").read)
+venue_list = JSON.parse(open("http://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=cttt-hearing-venues&query=select%20*%20from%20%60swdata%60").read)
 
 venue_list.each do |v|
   venue_url = url + v["postcode"]

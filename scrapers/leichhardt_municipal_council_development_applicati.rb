@@ -1,8 +1,8 @@
 require 'rubygems'
 require 'mechanize'
 
-starting_url = 'https://epwgate.waverley.nsw.gov.au/DA_Tracking/Modules/applicationmaster/default.aspx?page=found&1=thismonth&4a=448&6=F'
-comment_url = 'mailto:waver@waverley.nsw.gov.au?subject='
+starting_url = 'http://www.eservices.lmc.nsw.gov.au/DATrackingUI/Modules/Applicationmaster/default.aspx?page=found&1=thismonth&6=F'
+comment_url = 'mailto:leichhardt@lmc.nsw.gov.au?subject='
 
 def clean_whitespace(a)
   a.gsub("\r", ' ').gsub("\n", ' ').squeeze(" ").strip
@@ -20,12 +20,11 @@ def scrape_table(doc, comment_url)
       'comment_url' => comment_url + CGI::escape("Development Application Enquiry: " + clean_whitespace(h[1])),
       'council_reference' => clean_whitespace(h[1]),
       'date_received' => Date.strptime(clean_whitespace(h[2]), '%d/%m/%Y').to_s,
-      'address' => clean_whitespace(h[3].split('<br>')[0]),
+      'address' => clean_whitespace(tds[3].at('b').inner_text),
       'description' => CGI::unescapeHTML(clean_whitespace(h[3].split('<br>')[1..-1].join)),
       'date_scraped' => Date.today.to_s
     }
     
-    #pp record
     if ScraperWiki.select("* from swdata where `council_reference`='#{record['council_reference']}'").empty? 
       ScraperWiki.save_sqlite(['council_reference'], record)
     else
@@ -54,9 +53,7 @@ def scrape_and_follow_next_link(doc, comment_url)
   end
 end
 
-agent = Mechanize.new do |a|
-  a.verify_mode = OpenSSL::SSL::VERIFY_NONE
-end
+agent = Mechanize.new
 
 # Jump through bollocks agree screen
 doc = agent.get(starting_url)

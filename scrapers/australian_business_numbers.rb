@@ -1,5 +1,6 @@
 require 'open-uri'
 require 'nokogiri'
+require 'benchmark'
 
 # Returns an array of Australian Postcodes: https://gist.github.com/1504308
 def australian_postcodes
@@ -30,19 +31,78 @@ def australian_postcodes
   postcodes + (nt_and_act_range.map { |p| "0#{p.to_s}" })
 end
 
-parsed_postcodes = ScraperWiki.select('* from parsed_postcodes').map { |r| r['postcode'] }
+# Create a custom subclass of Nokogiri::XML::SAX::Document to parse ABN Search results
+class ABNSearchDoc < Nokogiri::XML::SAX::Document
+   attr_accessor :isInABNTag,:isInPostcodeTag,:postcode,:records
 
+   def initialize()
+      @isInABNTag =false
+      @isInPostcodeTag = false
+      @postcode = ""
+      @records = []
+   end
+
+   # set different states for the parser
+   def start_element name, attrs = []
+      @isInABNTag = (name == "abn")
+      @isInPostcodeTag = (name == "postcode")
+   end
+
+   #store the text that is inside XML tags based on current tag name
+   def characters chardata
+      # remove nonprintable characters and spaces
+      chardata = chardata.gsub(/[^\x20-\x7e]+/, '').gsub(/ /, '')
+      if chardata != ""
+         if @isInPostcodeTag
+            @postcode = chardata
+         end
+         if @isInABNTag
+            @records << {'abn' => chardata, 'postcode' => @postcode}
+            # try saving small batches of records as parsed
+            if @records.length > 5000
+              puts "Large number of records for this postcode, saving batch of #{@records.length} records..."
+              time = Benchmark.realtime do
+                ScraperWiki.save_sqlite ['abn'], @records
+              end
+              puts "Saved in #{(time*1000).ceil} ms."
+              @records = []
+            end
+         end
+      end
+   end
+
+end
+
+# eliminate already parsed postcodes from search
+parsed_postcodes = ScraperWiki.select('* from parsed_postcodes').map { |r| r['postcode'] }
 postcodes = australian_postcodes - parsed_postcodes
+
+# make index to reduce insert cost of each abn record
+#ScraperWiki.sqliteexecute('''           
+#    CREATE INDEX IF NOT EXISTS abn_manual_index 
+#    ON swdata (abn)''')
+
+# Create our parser
+myABNSearchDoc = ABNSearchDoc.new
+parser = Nokogiri::XML::SAX::Parser.new(myABNSearchDoc)
 
 postcodes.each do |postcode|
   puts "Getting postcode: #{postcode}"
-  
-  api_result = Nokogiri.parse(open("http://abr.business.gov.au/abrxmlsearch/AbrXmlSearch.asmx/SearchByABNStatus?postcode=#{postcode}&activeABNsOnly=N&currentGSTRegistrationOnly=N&entityTypeCode=&authenticationGuid=082f1497-93ff-4fc3-9c85-030022b11840"))
 
-  records = api_result.search('abn').map do |r|
-    {abn: r.text, postcode: postcode}
+  html = nil
+
+  time = Benchmark.realtime do
+    html = open("http://abr.business.gov.au/abrxmlsearch/AbrXmlSearch.asmx/SearchByABNStatus?postcode=#{postcode}&activeABNsOnly=N&currentGSTRegistrationOnly=N&entityTypeCode=&authenticationGuid=082f1497-93ff-4fc3-9c85-030022b11840")
   end
 
-  ScraperWiki.save_sqlite ['abn'], records
+  puts "Downloaded in #{(time*1000).ceil} ms"
+
+  time = Benchmark.realtime do
+    parser.parse(html)
+  end
+
+  puts "Finished parsing in #{(time*1000).ceil} ms, saving #{myABNSearchDoc.records.length} records for postcode: #{postcode}"
+  
+  ScraperWiki.save_sqlite ['abn'], myABNSearchDoc.records, verbose=0
   ScraperWiki.save_sqlite ["postcode"], {"postcode" => postcode}, "parsed_postcodes"
 end

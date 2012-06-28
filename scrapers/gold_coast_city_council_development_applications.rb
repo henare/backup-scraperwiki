@@ -1,8 +1,7 @@
-require 'rubygems'
 require 'mechanize'
 
-starting_url = 'https://epwgate.waverley.nsw.gov.au/DA_Tracking/Modules/applicationmaster/default.aspx?page=found&1=thismonth&4a=448&6=F'
-comment_url = 'mailto:waver@waverley.nsw.gov.au?subject='
+starting_url = 'http://pdonline.goldcoast.qld.gov.au/masterview/modules/ApplicationMaster/default.aspx?page=found&1=thismonth&4a=BLD%27,%27MCU%27,%27OPW%27,%27ROL&6=F'
+comment_url = 'mailto:gcccmail@goldcoast.qld.gov.au?subject='
 
 def clean_whitespace(a)
   a.gsub("\r", ' ').gsub("\n", ' ').squeeze(" ").strip
@@ -20,13 +19,12 @@ def scrape_table(doc, comment_url)
       'comment_url' => comment_url + CGI::escape("Development Application Enquiry: " + clean_whitespace(h[1])),
       'council_reference' => clean_whitespace(h[1]),
       'date_received' => Date.strptime(clean_whitespace(h[2]), '%d/%m/%Y').to_s,
-      'address' => clean_whitespace(h[3].split('<br>')[0]),
-      'description' => CGI::unescapeHTML(clean_whitespace(h[3].split('<br>')[1..-1].join)),
+      'address' => clean_whitespace(tds[3].at('b').inner_text),
+      'description' => CGI::unescapeHTML(clean_whitespace(h[3].split('<br>')[1..-1].join.gsub(/<\/?b>/,''))),
       'date_scraped' => Date.today.to_s
     }
     
-    #pp record
-    if ScraperWiki.select("* from swdata where `council_reference`='#{record['council_reference']}'").empty? 
+    if (ScraperWiki.select("* from swdata where `council_reference`='#{record['council_reference']}'").empty? rescue true)
       ScraperWiki.save_sqlite(['council_reference'], record)
     else
       puts "Skipping already saved record " + record['council_reference']
@@ -54,13 +52,11 @@ def scrape_and_follow_next_link(doc, comment_url)
   end
 end
 
-agent = Mechanize.new do |a|
-  a.verify_mode = OpenSSL::SSL::VERIFY_NONE
-end
+agent = Mechanize.new
 
 # Jump through bollocks agree screen
 doc = agent.get(starting_url)
-doc = doc.forms.first.submit(doc.forms.first.button_with(:value => "I Agree"))
+doc = doc.forms.first.submit(doc.forms.first.button_with(:value => "Agree"))
 doc = agent.get(starting_url)
 
 scrape_and_follow_next_link(doc, comment_url)
