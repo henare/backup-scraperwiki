@@ -1,9 +1,9 @@
 require 'rss/2.0'
 require 'date'
 
-feed = RSS::Parser.parse("http://eplanning.parracity.nsw.gov.au/Pages/XC.Track/SearchApplication.aspx?o=rss&d=last14days", false)
+url = 'http://bizsearch.penrithcity.nsw.gov.au/ePlanning/Pages/XC.Track/SearchApplication.aspx?d=thismonth&k=LodgementDate&t=DA&o=rss'
 
-p feed
+feed = RSS::Parser.parse(url, false)
 
 feed.channel.items.each do |item|
   record = {
