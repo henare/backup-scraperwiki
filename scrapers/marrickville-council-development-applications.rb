@@ -5,7 +5,6 @@ agent = Mechanize.new
 url = 'http://www.marrickville.nsw.gov.au/ePropertyProd/P1/PublicNotices/AllPublicNotices.aspx?r=$P1.WEBGUEST&f=$P1.ESB.PUBNOTAL.ENQ'
 page = agent.get(url)
 
-# FIXME: Not sure if this URL is working yet
 base_info_url = 'http://www.marrickville.nsw.gov.au/ePropertyProd/P1/PublicNotices/PublicNoticeDetails.aspx?r=$P1.WEBGUEST&f=$P1.ESB.PUBNOT.VIW&ApplicationId='
 comment_url = 'http://www.marrickville.nsw.gov.au/planning/da/comment.html'
 
@@ -13,7 +12,7 @@ comment_url = 'http://www.marrickville.nsw.gov.au/planning/da/comment.html'
   record = {
     'council_reference' => t.search('td')[1].inner_text,
     'description'       => t.search('td')[3].inner_text,
-    'on_notice_to'      => t.search('td')[7].inner_text,
+    'on_notice_to'      => Date.strptime(t.search('td')[7].inner_text, '%d/%m/%Y'),
     'address'           => t.search('td')[5].inner_text,
     'info_url'          => base_info_url + t.search('td')[1].inner_text,
     'comment_url'       => comment_url,

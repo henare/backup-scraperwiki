@@ -1,40 +1,48 @@
-require 'rubygems'
+require 'rss/2.0'
 require 'mechanize'
+require 'date'
 
+# Just get rid of the status_id param if you want it all, baby
+applications_on_exhibition_url = 'http://majorprojects.planning.nsw.gov.au/index.pl?action=search&status_id=6&rss=1'
+
+feed = RSS::Parser.parse applications_on_exhibition_url
 agent = Mechanize.new
-base_url = 'http://majorprojects.planning.nsw.gov.au/index.pl'
-url = base_url + '?action=search&status_id=6'
 
-page = agent.get(url)
+def get_value_from_td_label(label, label_tds)
+  label_cell = label_tds.detect { |e| e.inner_text.strip == label }
+  label_cell.next.next.inner_text.strip if label_cell
+end
 
-page.search('tr.green_row').each do |r|
-  application = agent.get(base_url + URI.parse(r.at('a').attributes['href']).to_s)
-  project_table = application.at('table.project_table')
-  
-  # Exceptions
-  # Skip applications if notice dates look out of place, unfortunately
-  # we're going to miss some applications here
-  next unless project_table.search('tr.project_subheading')[2].next.at('tr[4]')
-  next unless project_table.search('tr.project_subheading')[2].next.at('tr[4]').children[2]
-  # Skip SSS applications
-  next if project_table.search('tr.project_subheading')[1].next.at('tr[1]').inner_text.strip == 'Assessment Type: SSS'
-  next if project_table.search('tr.project_subheading')[2].next.at('tr[1]').inner_text.strip == 'Assessment Type: SSS'
+feed.channel.items.each do |item|
+  application = agent.get item.link
+
+  title = application.at('.vpa_header').at(:h2).inner_text
+  application_description = application.at('.description').inner_text.split('Other assessments against this site')[0].strip
+  description = application_description.empty? ? title : "#{title} - #{application_description}"
+
+  label_tds = application.search('.label_td')
+
+  on_notice_from_text = get_value_from_td_label('Exhibition Start', label_tds)
+  on_notice_to_text = get_value_from_td_label('Exhibition End', label_tds)
 
   record = {
-    'description'       => project_table.search('tr.project_subheading')[0].next.inner_text.strip,
-    'address'           => project_table.search('tr.project_subheading_split')[1].next.inner_text.strip,
-    'council_reference' => project_table.search('tr.project_subheading')[2].next.at('tr[2]').inner_text.strip[20..-1],
-    'on_notice_from'    => project_table.search('tr.project_subheading')[2].next.at('tr[4]').children[0].inner_text[-10..-1],
-    'on_notice_to'      => project_table.search('tr.project_subheading')[2].next.at('tr[4]').children[2].inner_text[-10..-1],
-    'info_url'          => application.uri.to_s,
-    'comment_url'       => application.uri.to_s,
-    'date_scraped'      => Date.today.to_s
+    :description       => description,
+    :address           => get_value_from_td_label('Location', label_tds),
+    :council_reference => get_value_from_td_label('Application Number', label_tds),
+    :on_notice_from    => (Date.strptime(on_notice_from_text, '%d/%m/%Y') if on_notice_from_text),
+    :on_notice_to      => (Date.strptime(on_notice_to_text, '%d/%m/%Y') if on_notice_to_text),
+    :info_url          => item.link,
+    :comment_url       => item.link,
+    :date_scraped      => Date.today.to_s
   }
-  
-  if ScraperWiki.select("* from swdata where `council_reference`='#{record['council_reference']}'").empty? 
-    ScraperWiki.save_sqlite(['council_reference'], record)
-  else
-    puts "Skipping already saved record " + record['council_reference']
+
+  # Skip saving when there is no council_reference
+  if record['council_reference']
+    if ScraperWiki.select("* from swdata where `council_reference`='#{record['council_reference']}'").empty? 
+      ScraperWiki.save_sqlite(['council_reference'], record)
+    else
+      puts "Skipping already saved record " + record['council_reference']
+    end
   end
 end
 
