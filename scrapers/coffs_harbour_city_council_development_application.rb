@@ -21,8 +21,7 @@ t.gsub!("utf-16", "utf-8")
 feed = RSS::Parser.parse(t, false)
 
 feed.channel.items.each do |item|
-  # Seeing a record without an address (which is obviously useless). So, skipping
-  t = item.description.split(/[\.-]/)
+  t = item.description.split('. ')
   if t.count >= 2
     record = {
       'council_reference' => item.title.split(' ')[0],
@@ -37,11 +36,11 @@ feed.channel.items.each do |item|
       'date_scraped'      => Date.today.to_s
     }
 
-    if ScraperWiki.select("* from swdata where `council_reference`='#{record['council_reference']}'").empty? 
+    #if ScraperWiki.select("* from swdata where `council_reference`='#{record['council_reference']}'").empty? 
       ScraperWiki.save_sqlite(['council_reference'], record)
-    else
-       puts "Skipping already saved record " + record['council_reference']
-    end
+    #else
+    #   puts "Skipping already saved record " + record['council_reference']
+    #end
   end
 end
 

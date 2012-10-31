@@ -37,12 +37,14 @@ feed.channel.items.each do |item|
   }
 
   # Skip saving when there is no council_reference
-  if record['council_reference']
+  if record[:council_reference]
     if ScraperWiki.select("* from swdata where `council_reference`='#{record['council_reference']}'").empty? 
-      ScraperWiki.save_sqlite(['council_reference'], record)
+      ScraperWiki.save_sqlite([:council_reference], record)
     else
-      puts "Skipping already saved record " + record['council_reference']
+      puts "Skipping already saved record " + record[:council_reference]
     end
+  else
+    puts "Skipping application due to missing council_reference at #{item.link}"
   end
 end
 
