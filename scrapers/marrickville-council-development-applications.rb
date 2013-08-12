@@ -9,17 +9,20 @@ base_info_url = 'http://www.marrickville.nsw.gov.au/ePropertyProd/P1/PublicNotic
 comment_url = 'http://www.marrickville.nsw.gov.au/planning/da/comment.html'
 
 (page/'//*[@id="ctl00_Content_cusApplicationResultsGrid_pnlCustomisationGrid"]').search('table').each do |t|
+  closing_date = t.search('td')[7].inner_text
+  on_notice_to = (closing_date == 'N/A' ? nil : Date.strptime(closing_date, '%d/%m/%Y'))
+
   record = {
     'council_reference' => t.search('td')[1].inner_text,
     'description'       => t.search('td')[3].inner_text,
-    'on_notice_to'      => Date.strptime(t.search('td')[7].inner_text, '%d/%m/%Y'),
+    'on_notice_to'      => on_notice_to,
     'address'           => t.search('td')[5].inner_text,
     'info_url'          => base_info_url + t.search('td')[1].inner_text,
     'comment_url'       => comment_url,
     'date_scraped'      => Date.today.to_s
   }
 
-  if ScraperWiki.select("* from swdata where `council_reference`='#{record['council_reference']}'").empty?
+  if ScraperWiki.select("* from swdata where `council_reference`='#{record['council_reference']}'").empty? 
     ScraperWiki.save_sqlite(['council_reference'], record)
   else
     puts "Skipping already saved record " + record['council_reference']

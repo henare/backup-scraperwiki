@@ -29,10 +29,10 @@ feed.channel.items.each do |item|
       # Have to make this a string to get the date library to parse it
       'date_received'     => Date.parse(item.pubDate.to_s),
       'address'           => t[0].strip,
-      'info_url'          => item.link,
+      'info_url'          => "http://eplanning.parracity.nsw.gov.au/Pages/XC.Track/SearchApplication.aspx#{item.link}",
       # Comment URL is actually an email address but I think it's best
       # they go to the detail page
-      'comment_url'       => item.link,
+      'comment_url'       => "http://eplanning.parracity.nsw.gov.au/Pages/XC.Track/SearchApplication.aspx#{item.link}",
       'date_scraped'      => Date.today.to_s
     }
     if ScraperWiki.select("* from swdata where `council_reference`='#{record['council_reference']}'").empty? 

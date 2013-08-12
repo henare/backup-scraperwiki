@@ -38,8 +38,8 @@ das = das_data.collect do |da_item|
   page_info['council_reference'] = da_item[0]
   # There is a direct link but you need a session to access it :(
   page_info['info_url'] = url
-  page_info['description'] = da_item[1]
-  page_info['address'] = da_item[2]
+  page_info['description'] = da_item[3]
+  page_info['address'] = "#{da_item[1]}, #{da_item[2]}"
   page_info['date_scraped'] = Date.today.to_s
   page_info['comment_url'] = comment_url
   
