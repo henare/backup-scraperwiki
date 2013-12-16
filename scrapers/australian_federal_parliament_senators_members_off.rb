@@ -39,6 +39,7 @@ def save_results_from_page(page, house)
       website: website
     }
 
+    puts "Saving #{record[:full_name]}"
     ScraperWiki::save_sqlite [:aph_id], record
   end
 end
@@ -49,13 +50,19 @@ search_url = 'http://www.aph.gov.au/Senators_and_Members/Parliamentarian_Search_
 page = @agent.get "#{search_url}?mem=1&q="
 
 while page.link_with(:text => 'Next')
+  puts "Saving results from Representatives page"
   save_results_from_page(page, :representatives)
   page = @agent.get search_url + page.link_with(:text => 'Next').href
 end
 
+save_results_from_page(page, :representatives) # Save the final page
+
 page = @agent.get "#{search_url}?sen=1&q="
 
 while page.link_with(:text => 'Next')
+  puts "Saving results from Senate page"
   save_results_from_page(page, :senate)
   page = @agent.get search_url + page.link_with(:text => 'Next').href
 end
+
+save_results_from_page(page, :senate) # Save the final page
